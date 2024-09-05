@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS & Algo Learner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="mode-toggle">
+        <label class="switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <h1>DS & Algo Learner</h1>
+    {% for category, problems in categories.items() %}
+        <h2>{{ category }}</h2>
+        <ul>
+            {% for problem_name, problem_title in problems %}
+                <li><a href="{{ url_for('problem', problem_name=problem_name) }}">{{ problem_title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+
+    <script src="{{ url_for('static', filename='dark_mode.js') }}"></script>
+</body>
+</html>

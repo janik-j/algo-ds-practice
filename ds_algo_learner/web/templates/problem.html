@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ problem.title }} - DS & Algo Learner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>{{ problem.title }}</h1>
+    <div class="problem">
+        <p>{{ problem.description }}</p>
+        <textarea id="solution" placeholder="Write your Python function here...">def {{ problem_name }}(nums):
+    # Your code here
+    pass</textarea>
+        <div class="button-container">
+            <button onclick="checkSolution()">Submit Solution</button>
+            <button onclick="requestHint()">Request Hint</button>
+            <button onclick="explainStepByStep()">Explain Step-by-Step</button>
+        </div>
+    </div>
+    <div id="results"></div>
+    
+    <div id="ai-assistant">
+        <h3>AI Assistant (Powered by Gemini)</h3>
+        <div id="chat-container"></div>
+        <input type="text" id="chat-input" placeholder="Ask for a hint or tip...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='dark_mode.js') }}"></script>
+    <script>
+        function sendMessage() {
+            const userMessage = document.getElementById('chat-input').value;
+            const solution = document.getElementById('solution').value;
+            chat(userMessage, solution);
+        }
+
+        function chat(userMessage, solution) {
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    problem: '{{ problem_name }}', 
+                    message: userMessage,
+                    code: solution
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML += `<p><strong>You:</strong> ${userMessage}</p>`;
+                chatContainer.innerHTML += `<p><strong>AI:</strong> ${data.chat}</p>`;
+                if (data.codeHint) {
+                    const hintButton = document.createElement('button');
+                    hintButton.innerText = 'Insert Hint';
+                    hintButton.onclick = () => insertCodeHint(data.codeHint);
+                    chatContainer.appendChild(hintButton);
+                }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                document.getElementById('chat-input').value = '';
+            });
+        }
+
+        function insertCodeHint(hint) {
+            const solution = document.getElementById('solution');
+            const cursorPos = solution.selectionStart;
+            const textBefore = solution.value.substring(0, cursorPos);
+            const textAfter = solution.value.substring(cursorPos, solution.value.length);
+            solution.value = textBefore + "\n# Hint: " + hint + "\n" + textAfter;
+        }
+
+        function checkSolution() {
+            const solution = document.getElementById('solution').value;
+            fetch('/check_solution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ problem: '{{ problem_name }}', solution: solution }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `<h3>Results:</h3>`;
+                data.results.forEach((result, index) => {
+                    resultsDiv.innerHTML += `
+                        <div class="test-case ${result.is_correct ? 'correct' : 'incorrect'}">
+                            <p>Test Case ${index + 1}:</p>
+                            <p>Input: ${result.input}</p>
+                            <p>Expected: ${result.expected}</p>
+                            <p>Your Result: ${result.user_result}</p>
+                            <p>${result.is_correct ? 'Correct!' : 'Incorrect'}</p>
+                        </div>
+                    `;
+                });
+                if (data.all_correct) {
+                    resultsDiv.innerHTML += `<p style="color: green; font-weight: bold;">All test cases passed! Great job!</p>`;
+                }
+                chat("Please analyze my solution", solution);
+            });
+        }
+
+        function requestHint() {
+            const solution = document.getElementById('solution').value;
+            chat("Can you give me a hint based on my current code?", solution);
+        }
+
+
+        function explainStepByStep() {
+            const solution = document.getElementById('solution').value;
+            chat("Can you explain the solution step by step?", solution);
+        }
+    </script>
+</body>
+</html>
