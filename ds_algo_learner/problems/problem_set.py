@@ -46,7 +46,10 @@ PROBLEMS = {
             {'input': [1,2,3,1], 'expected': True},
             {'input': [1,2,3,4], 'expected': False},
             {'input': [1,1,1,3,3,4,3,2,4,2], 'expected': True}
-        ]
+        ],
+        'time_complexity': 'O(n)',
+        'space_complexity': 'O(n)',
+        'difficulty': 'Easy'
     },
     'reverse_string': {
         'title': 'Reverse String',
@@ -56,7 +59,10 @@ PROBLEMS = {
         'test_cases': [
             {'input': [["h","e","l","l","o"]], 'expected': ["o","l","l","e","h"]},
             {'input': [["H","a","n","n","a","h"]], 'expected': ["h","a","n","n","a","H"]}
-        ]
+        ],
+        'time_complexity': 'O(n)',
+        'space_complexity': 'O(1)',
+        'difficulty': 'Easy'
     },
     'reverse_linked_list': {
         'title': 'Reverse Linked List',
@@ -67,6 +73,10 @@ PROBLEMS = {
             {'input': [ListNode(1, ListNode(2, ListNode(3, ListNode(4, ListNode(5)))))], 'expected': [5,4,3,2,1]},
             {'input': [ListNode(1, ListNode(2))], 'expected': [2,1]},
             {'input': [None], 'expected': None}
-        ]
+        ],
+        'time_complexity': 'O(n)',
+        'space_complexity': 'O(1)',
+        'difficulty': 'Easy'
     }
 }
+

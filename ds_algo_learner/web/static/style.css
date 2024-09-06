@@ -16,6 +16,9 @@ body.dark-mode {
     --button-color: #ffffff;
     --correct-bg: #1e4620;
     --incorrect-bg: #4e1e1e;
+    --table-border-color: #444444;
+    --table-header-bg: #2a2a2a;
+    --table-row-bg: #1a1a1a;
 }
 
 body {
@@ -61,6 +64,20 @@ button {
 }
 
 button:hover {
+    opacity: 0.8;
+}
+
+.btn-link {
+    display: inline-block;
+    text-align: center;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--button-bg);
+    color: var(--button-color);
+    border: none;
+    cursor: pointer;
+}
+.btn-link:hover {
     opacity: 0.8;
 }
 
@@ -132,4 +149,9 @@ input:checked + .slider {
 
 input:checked + .slider:before {
     transform: translateX(26px);
+}
+
+.CodeMirror {
+    font-size: 14px;
+    line-height: 1.5;
 }

@@ -1,38 +1,186 @@
+<!-- problem.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ problem.title }} - DS & Algo Learner</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/theme/monokai.min.css">
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <style>
+        .CodeMirror {
+            height: auto; 
+            border: 1px solid #4a5568; /* Darker border */
+        }
+    </style>
 </head>
-<body>
-    <h1>{{ problem.title }}</h1>
-    <div class="problem">
-        <p>{{ problem.description }}</p>
-        <textarea id="solution" placeholder="Write your Python function here...">def {{ problem_name }}(nums):
+<body class="bg-gray-900 text-white font-mono container mx-auto">
+    <div class="container mx-auto p-8">
+        <button onclick="window.history.back()" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+            Go Back
+        </button>
+
+        <div class="flex justify-end mb-4">
+            <button id="darkModeToggle" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Toggle Dark Mode
+            </button>
+        </div>
+
+        <h1 class="text-3xl font-bold mb-4">{{ problem.title }}</h1>
+        <p class="text-gray-400">Difficulty: {{ problem.difficulty }}</p>
+        <div id="timer" class="text-xl font-bold mb-4">Time: 00:00:00</div>
+
+        <div class="problem bg-gray-800 p-4 rounded shadow-md">
+            <p>{{ problem.description }}</p>
+            <textarea id="code-editor">def {{ problem_name }}(nums):
     # Your code here
     pass</textarea>
-        <div class="button-container">
-            <button onclick="checkSolution()">Submit Solution</button>
-            <button onclick="requestHint()">Request Hint</button>
-            <button onclick="explainStepByStep()">Explain Step-by-Step</button>
+            <div class="complexity-input mt-4">
+                <label for="time-complexity-estimate" class="block text-sm font-bold mb-2">Time Complexity:</label>
+                <input type="text" id="time-complexity-estimate" class="shadow appearance-none border rounded w-full py-2 px-3 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline-outline" required>
+            </div>
+            <div class="complexity-input mt-4">
+                <label for="space-complexity-estimate" class="block text-sm font-bold mb-2">Space Complexity:</label>
+                <input type="text" id="space-complexity-estimate" class="shadow appearance-none border rounded w-full py-2 px-3 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="button-container mt-4 flex space-x-4">
+                <button onclick="checkSolution()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Submit Solution
+                </button>
+                <button onclick="requestHint()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Request Hint
+                </button>
+            </div>
         </div>
-    </div>
-    <div id="results"></div>
-    
-    <div id="ai-assistant">
-        <h3>AI Assistant (Powered by Gemini)</h3>
-        <div id="chat-container"></div>
-        <input type="text" id="chat-input" placeholder="Ask for a hint or tip...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+
+        <div id="results" class="mt-8"></div>
+
+        <div id="ai-assistant" class="mt-8 bg-gray-800 p-4 rounded shadow-md">
+            <h3 class="text-xl font-bold mb-4">AI Assistant (Powered by Gemini)</h3>
+            <div id="chat-container" class="mb-4 max-h-48 overflow-y-auto"></div>
+            <input type="text" id="chat-input" class="shadow appearance-none border rounded w-full py-2 px-3 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline" placeholder="Ask for a hint or tip...">
+            <button onclick="sendMessage()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-2">
+                Send
+            </button>
+        </div>
+
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/fold/brace-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/fold/indent-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/addon/fold/comment-fold.min.js"></script>
+    <!-- Python code formatter -->
+    <script src="https://unpkg.com/prettier@2.3.2/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@2.3.2/parser-python.js"></script>
 
     <script src="{{ url_for('static', filename='dark_mode.js') }}"></script>
     <script>
+        let editor;
+        let timerInterval;
+        let startTime;
+        let elapsedTime = 0;
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+                mode: "python",
+                theme: "monokai",
+                lineNumbers: true,
+                indentUnit: 4,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+            });
+            editor.setSize(null, 300);  // Set height to 300px, width to auto
+            startTimer(); // Start the timer automatically
+        });
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            elapsedTime += Date.now() - startTime;
+        }
+
+        function updateTimer() {
+            const totalSeconds = Math.floor((elapsedTime + Date.now() - startTime) / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            document.getElementById('timer').textContent = 
+                `Time: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function checkSolution() {
+            const timeComplexity = document.getElementById('time-complexity-estimate').value;
+            const spaceComplexity = document.getElementById('space-complexity-estimate').value;
+            
+            if (!timeComplexity || !spaceComplexity) {
+                alert("Please provide both time and space complexity estimates before submitting.");
+                return;
+            }
+
+            stopTimer(); // Stop the timer when submitting the solution
+            const solution = editor.getValue();
+            const duration = document.getElementById('timer').textContent.split(': ')[1];
+
+            fetch('/check_solution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    problem: '{{ problem_name }}', 
+                    solution: solution,
+                    duration: duration,
+                    time_complexity_estimate: timeComplexity,
+                    space_complexity_estimate: spaceComplexity
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `<h3>Results:</h3>`;
+                data.results.forEach((result, index) => {
+                    resultsDiv.innerHTML += `
+                        <div class="test-case ${result.is_correct ? 'correct' : 'incorrect'}">
+                            <p>Test Case ${index + 1}:</p>
+                            <p>Input: ${result.input}</p>
+                            <p>Expected: ${result.expected}</p>
+                            <p>Your Result: ${result.user_result}</p>
+                            <p>${result.is_correct ? 'Correct!' : 'Incorrect'}</p>
+                        </div>
+                    `;
+                });
+                if (data.all_correct) {
+                    resultsDiv.innerHTML += `<p style="color: green; font-weight: bold;">All test cases passed! Great job!</p>`;
+                    if (data.complexity_feedback) {
+                        resultsDiv.innerHTML += `<p>Complexity Feedback: ${data.complexity_feedback}</p>`;
+                    }
+                }
+                chat("Please analyze my solution", solution);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while checking the solution. Please try again.');
+            });
+        }
+
         function sendMessage() {
             const userMessage = document.getElementById('chat-input').value;
-            const solution = document.getElementById('solution').value;
+            const solution = editor.getValue();
             chat(userMessage, solution);
         }
 
@@ -65,54 +213,47 @@
         }
 
         function insertCodeHint(hint) {
-            const solution = document.getElementById('solution');
-            const cursorPos = solution.selectionStart;
-            const textBefore = solution.value.substring(0, cursorPos);
-            const textAfter = solution.value.substring(cursorPos, solution.value.length);
-            solution.value = textBefore + "\n# Hint: " + hint + "\n" + textAfter;
+            const doc = editor.getDoc();
+            const cursor = doc.getCursor();
+            doc.replaceRange("\n# Hint: " + hint + "\n", cursor);
         }
 
-        function checkSolution() {
-            const solution = document.getElementById('solution').value;
-            fetch('/check_solution', {
+        function requestHint() {
+            const solution = editor.getValue();
+            chat("Can you give me a hint based on my current code?", solution);
+        }
+
+        function saveMetadata() {
+            const duration = document.getElementById('timer').textContent.split(': ')[1];
+            const timeComplexityEstimate = document.getElementById('time-complexity-estimate').value;
+            const spaceComplexityEstimate = document.getElementById('space-complexity-estimate').value;
+        
+            fetch('/update_progress', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ problem: '{{ problem_name }}', solution: solution }),
+                body: JSON.stringify({
+                    problem: '{{ problem_name }}',
+                    duration: duration,
+                    time_complexity_estimate: timeComplexityEstimate,
+                    space_complexity_estimate: spaceComplexityEstimate,
+                    approach: approach,
+                    notes: notes
+                }),
             })
             .then(response => response.json())
             .then(data => {
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.innerHTML = `<h3>Results:</h3>`;
-                data.results.forEach((result, index) => {
-                    resultsDiv.innerHTML += `
-                        <div class="test-case ${result.is_correct ? 'correct' : 'incorrect'}">
-                            <p>Test Case ${index + 1}:</p>
-                            <p>Input: ${result.input}</p>
-                            <p>Expected: ${result.expected}</p>
-                            <p>Your Result: ${result.user_result}</p>
-                            <p>${result.is_correct ? 'Correct!' : 'Incorrect'}</p>
-                        </div>
-                    `;
-                });
-                if (data.all_correct) {
-                    resultsDiv.innerHTML += `<p style="color: green; font-weight: bold;">All test cases passed! Great job!</p>`;
+                if (data.status === 'success') {
+                    alert('Progress updated successfully');
+                    if (data.complexity_feedback) {
+                        alert(data.complexity_feedback);
+                    }
+                } else {
+                    alert('Error updating progress');
                 }
-                chat("Please analyze my solution", solution);
             });
-        }
-
-        function requestHint() {
-            const solution = document.getElementById('solution').value;
-            chat("Can you give me a hint based on my current code?", solution);
-        }
-
-
-        function explainStepByStep() {
-            const solution = document.getElementById('solution').value;
-            chat("Can you explain the solution step by step?", solution);
-        }
+        }        
     </script>
 </body>
 </html>

@@ -1,29 +1,133 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DS & Algo Learner</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script> 
 </head>
-<body>
-    <div class="mode-toggle">
-        <label class="switch">
-            <input type="checkbox" id="darkModeToggle">
-            <span class="slider"></span>
-        </label>
-    </div>
+<body class="bg-gray-900 text-white font-mono container mx-auto">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-4">DS & Algo Learner</h1>
 
-    <h1>DS & Algo Learner</h1>
-    {% for category, problems in categories.items() %}
-        <h2>{{ category }}</h2>
-        <ul>
-            {% for problem_name, problem_title in problems %}
-                <li><a href="{{ url_for('problem', problem_name=problem_name) }}">{{ problem_title }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endfor %}
+        <div class="flex justify-end mb-4">
+            <button id="darkModeToggle" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Toggle Dark Mode
+            </button>
+        </div>
 
+        <h2 class="text-2xl font-bold mb-4">Problem List</h2>
+        {% for category, problems in categories.items() %}
+            <h3 class="text-xl font-bold mb-4">{{ category }}</h3>
+            <div class="space-y-4"> 
+                {% for problem_name, problem_title in problems %}
+                    <a href="{{ url_for('problem', problem_name=problem_name) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">{{ problem_title }}</a>
+                {% endfor %}
+            </div>
+            <div class="mb-8"> </div>  <!-- Adds space below each category -->
+        {% endfor %}
+
+        <h2 class="text-2xl font-bold mt-8 mb-2">Your Progress</h2>
+        <table class="table-auto w-full border border-gray-800">
+            <thead>
+                <tr class="bg-gray-800">
+                    <th class="px-4 py-2">Date</th>
+                    <th class="px-4 py-2">Problem</th>
+                    <th class="px-4 py-2">Duration</th>
+                    <th class="px-4 py-2">Difficulty</th>
+                    <th class="px-4 py-2">Time Complexity</th>
+                    <th class="px-4 py-2">Space Complexity</th>
+                    <th class="px-4 py-2">Feedback</th>
+                    <th class="px-4 py-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in progress %}
+                    <tr>
+                        <td class="border px-4 py-2">{{ entry.date }}</td>
+                        <td class="border px-4 py-2">{{ entry.problem }}</td>
+                        <td class="border px-4 py-2">{{ entry.duration }}</td>
+                        <td class="border px-4 py-2 
+                        {% if entry.difficulty == 'Easy' %} text-green-500 
+                        {% elif entry.difficulty == 'Medium' %} text-orange-500 
+                        {% elif entry.difficulty == 'Hard' %} text-red-500 
+                        {% endif %}
+                    ">{{ entry.difficulty }}</td>
+                        <td class="border px-4 py-2">{{ entry.time_complexity_estimate }} (Actual: {{ entry.actual_time_complexity }})</td>
+                        <td class="border px-4 py-2">{{ entry.space_complexity_estimate }} (Actual: {{ entry.actual_space_complexity }})</td>
+                        <td class="border px-4 py-2">{{ entry.complexity_feedback }}</td>
+                        <td class="border px-4 py-2">
+                            <button onclick="editProgress('{{ entry.problem }}')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline">Edit</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 class="text-2xl font-bold mt-8 mb-2">Prioritized Problems</h2>
+        <ul id="prioritized-problems" class="list-disc pl-6"></ul>
+
+    <script>
+        function editProgress(problemName) {
+            document.getElementById('edit-problem-name').value = problemName;
+            document.getElementById('edit-progress-form').style.display = 'block';
+        }
+
+        document.getElementById('progress-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const problemName = document.getElementById('edit-problem-name').value;
+            const duration = document.getElementById('edit-duration').value;
+            const difficulty = document.getElementById('edit-difficulty').value;
+            const approach = document.getElementById('edit-approach').value;
+            const notes = document.getElementById('edit-notes').value;
+            const timeComplexity = document.getElementById('edit-time-complexity').value;
+            const spaceComplexity = document.getElementById('edit-space-complexity').value;
+
+            fetch('/update_progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    problem: problemName,
+                    duration: duration,
+                    difficulty: difficulty,
+                    approach: approach,
+                    notes: notes,
+                    time_complexity: timeComplexity,
+                    space_complexity: spaceComplexity
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Progress updated successfully');
+                    location.reload();
+                } else {
+                    alert('Error updating progress');
+                }
+            });
+        });
+
+        function getPrioritizedProblems() {
+            fetch('/get_priority')
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('prioritized-problems');
+                list.innerHTML = '';
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.problem} - Priority: ${item.priority} (${item.reason})`;
+                    list.appendChild(li);
+                });
+            });
+        }
+
+        getPrioritizedProblems();
+    </script>
     <script src="{{ url_for('static', filename='dark_mode.js') }}"></script>
+
 </body>
 </html>
