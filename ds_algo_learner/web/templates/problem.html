@@ -32,9 +32,20 @@
         <p class="text-gray-400">Difficulty: {{ problem.difficulty }}</p>
         <div id="timer" class="text-xl font-bold mb-4">Time: 00:00:00</div>
 
-        <div class="problem bg-gray-800 p-4 rounded shadow-md">
+        <div class="problem text-lg bg-gray-800 p-4 rounded shadow-md">
             <p>{{ problem.description }}</p>
-            <textarea id="code-editor">def {{ problem_name }}(nums):
+            <div class="examples mt-4">
+                <h3 class="text-xl font-bold mb-2">Examples:</h3>
+                {% for example in problem.examples %}
+                <div class="example bg-gray-700 p-2 rounded mb-2">
+                    <p><strong>Input:</strong> {{ example.input }}</p>
+                    <p><strong>Output:</strong> {{ example.output }}</p>
+                </div>
+                <br>
+                {% endfor %}
+            </div>
+
+            <textarea id="code-editor">def {{ problem_name }}({{ problem.signature }}):
     # Your code here
     pass</textarea>
             <div class="complexity-input mt-4">
@@ -88,6 +99,7 @@
         let timerInterval;
         let startTime;
         let elapsedTime = 0;
+        let chatLog = [];
 
         document.addEventListener('DOMContentLoaded', (event) => {
             editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
@@ -146,7 +158,8 @@
                     solution: solution,
                     duration: duration,
                     time_complexity_estimate: timeComplexity,
-                    space_complexity_estimate: spaceComplexity
+                    space_complexity_estimate: spaceComplexity,
+                    chat_log: chatLog // Send the chat log to the server
                 }),
             })
             .then(response => response.json())
@@ -181,10 +194,15 @@
         function sendMessage() {
             const userMessage = document.getElementById('chat-input').value;
             const solution = editor.getValue();
-            chat(userMessage, solution);
+            const timeComplexityEstimate = document.getElementById('time-complexity-estimate').value;
+            const spaceComplexityEstimate = document.getElementById('space-complexity-estimate').value;
+            chat(userMessage, solution, timeComplexityEstimate, spaceComplexityEstimate);
         }
 
-        function chat(userMessage, solution) {
+        function chat(userMessage, solution, timeComplexityEstimate, spaceComplexityEstimate) {
+            // Add user message to chat log
+            chatLog.push({ role: "user", content: userMessage });
+
             fetch('/chat', {
                 method: 'POST',
                 headers: {
@@ -193,11 +211,17 @@
                 body: JSON.stringify({ 
                     problem: '{{ problem_name }}', 
                     message: userMessage,
-                    code: solution
+                    code: solution,
+                    time_complexity_estimate: timeComplexityEstimate,
+                    space_complexity_estimate: spaceComplexityEstimate,
+                    chat_log: chatLog // Send the chat log to the server 
                 }),
             })
             .then(response => response.json())
             .then(data => {
+                // Add AI message to chat log
+                chatLog.push({ role: "assistant", content: data.chat });
+
                 const chatContainer = document.getElementById('chat-container');
                 chatContainer.innerHTML += `<p><strong>You:</strong> ${userMessage}</p>`;
                 chatContainer.innerHTML += `<p><strong>AI:</strong> ${data.chat}</p>`;
@@ -239,7 +263,8 @@
                     time_complexity_estimate: timeComplexityEstimate,
                     space_complexity_estimate: spaceComplexityEstimate,
                     approach: approach,
-                    notes: notes
+                    notes: notes,
+                    chat_log: chatLog
                 }),
             })
             .then(response => response.json())

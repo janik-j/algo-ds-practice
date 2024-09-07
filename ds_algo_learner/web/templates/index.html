@@ -1,10 +1,11 @@
 <!-- index.html -->
 <!DOCTYPE html>
+
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DS & Algo Learner</title>
+    <title>DS & Algo Learnessssr</title>    
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.tailwindcss.com"></script> 
 </head>
@@ -21,12 +22,29 @@
         <h2 class="text-2xl font-bold mb-4">Problem List</h2>
         {% for category, problems in categories.items() %}
             <h3 class="text-xl font-bold mb-4">{{ category }}</h3>
-            <div class="space-y-4"> 
-                {% for problem_name, problem_title in problems %}
-                    <a href="{{ url_for('problem', problem_name=problem_name) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">{{ problem_title }}</a>
+            <div class="flex flex-wrap gap-2 mb-8">
+                {% for problem_name, problem_data in problems.items() %}
+                    {% set is_solved = problem_name in progress|map(attribute='problem')|list %}
+                    <a href="{{ url_for('problem', problem_name=problem_name) }}"
+                       class="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline
+                              {% if is_solved %}
+                                  bg-gray-300 hover:bg-gray-400 text-gray-700
+                              {% else %}
+                                  text-white
+                                  {% if problem_data.difficulty == 'Easy' %} bg-green-500 hover:bg-green-700
+                                  {% elif problem_data.difficulty == 'Medium' %} bg-yellow-500 hover:bg-yellow-700
+                                  {% elif problem_data.difficulty == 'Hard' %} bg-red-500 hover:bg-red-700
+                                  {% else %} bg-blue-500 hover:bg-blue-700
+                                  {% endif %}
+                              {% endif %}">
+                        {{ problem_data.title }}
+                    </a>
+                {% else %}
+                    <p>No problems in this category</p>
                 {% endfor %}
             </div>
-            <div class="mb-8"> </div>  <!-- Adds space below each category -->
+        {% else %}
+            <p>No categories found</p>
         {% endfor %}
 
         <h2 class="text-2xl font-bold mt-8 mb-2">Your Progress</h2>
@@ -41,6 +59,8 @@
                     <th class="px-4 py-2">Space Complexity</th>
                     <th class="px-4 py-2">Feedback</th>
                     <th class="px-4 py-2">Actions</th>
+                    <th class="px-4 py-2">Anki Cards</th>
+                    <th class="px-4 py-2">Remove</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,11 +75,21 @@
                         {% elif entry.difficulty == 'Hard' %} text-red-500 
                         {% endif %}
                     ">{{ entry.difficulty }}</td>
-                        <td class="border px-4 py-2">{{ entry.time_complexity_estimate }} (Actual: {{ entry.actual_time_complexity }})</td>
-                        <td class="border px-4 py-2">{{ entry.space_complexity_estimate }} (Actual: {{ entry.actual_space_complexity }})</td>
-                        <td class="border px-4 py-2">{{ entry.complexity_feedback }}</td>
+                        <td class="border px-4 py-2">{{ entry.actual_time_complexity }}</td>
+                        <td class="border px-4 py-2">{{ entry.actual_space_complexity }}</td>
+                        <td class="border px-4 py-2">{{ entry.feedback }}</td>
                         <td class="border px-4 py-2">
                             <button onclick="editProgress('{{ entry.problem }}')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline">Edit</button>
+                        </td>
+                        <td class="border px-4 py-2">
+                            {% if entry.anki_cards %}
+                                <button onclick="downloadAnkiCards('{{ entry.problem }}')" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline">Download</button>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="border px-4 py-2">
+                            <button onclick="removeProblem('{{ entry.problem }}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline">Remove</button>
                         </td>
                     </tr>
                 {% endfor %}
@@ -126,6 +156,34 @@
         }
 
         getPrioritizedProblems();
+
+        function downloadAnkiCards(problemName) {
+            window.location.href = `/download_anki_cards/${problemName}`;
+        }
+
+        function removeProblem(problemName) {
+            if (confirm(`Are you sure you want to remove the problem "${problemName}" from your progress?`)) {
+                fetch('/remove_problem', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        problem: problemName
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Problem removed successfully');
+                        location.reload();
+                    } else {
+                        alert('Error removing problem');
+                    }
+                });
+            }
+        }
+
     </script>
     <script src="{{ url_for('static', filename='dark_mode.js') }}"></script>
 
